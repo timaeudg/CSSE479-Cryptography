@@ -1,16 +1,18 @@
 __author__ = 'timaeudg'
 import math
+from operator import itemgetter
 
-ALPHA_MAPPING = {'a': 0.082, 'b': 0.015, 'c': 0.028, 'd': 0.043, 'e': 0.127, 'f': 0.022, 'g': 0.020, 'h': 0.061,
-                 'i': 0.070, 'j': 0.002, 'k': 0.008, 'l': 0.040, 'm': 0.024, 'n': 0.067, 'o': 0.075, 'p': 0.019,
-                 'q': 0.001, 'r': 0.060, 's': 0.063, 't': 0.091, 'u': 0.028, 'v': 0.010, 'w': 0.023, 'x': 0.001,
-                 'y': 0.020, 'z': 0.001}
+ALPHA_MAPPING = [0.082, 0.015, 0.028, 0.043, 0.127, 0.022, 0.020, 0.061,
+                 0.070, 0.002, 0.008, 0.040, 0.024, 0.067, 0.075, 0.019,
+                 0.001, 0.060, 0.063, 0.091, 0.028, 0.010, 0.023, 0.001,
+                 0.020, 0.001]
 
 
 def main():
     message = input("Enter a message to decode: ")
-    message_list = decipher_affine(message)
-    print(message_list)
+    message_list = decipher_affine(message.lower())
+    for message in message_list:
+        print(message)
 
 
 def decipher_affine(message):
@@ -29,9 +31,25 @@ def decipher_affine(message):
             conversion = []
             for val in converted_int_message:
                 conversion.append(chr(((alpha*val + beta) % 26) + 97))
-            possible_conversions.append(''.join(conversion))
-    return possible_conversions
+            possible_conversions.append(conversion)
 
+    correlated_conversions = []
+    for conversion in possible_conversions:
+        frequency = normalize(count_letters(conversion))
+        correlated_conversions.append((conversion, pearson_def(frequency, ALPHA_MAPPING)))
+    sorted_correlated_conversions = sorted(correlated_conversions, key=itemgetter(1), reverse=True)
+
+    to_return = []
+    for conversion in sorted_correlated_conversions:
+        to_return.append((''.join(conversion[0]), conversion[1]))
+    return to_return
+
+
+def count_letters(list_of_characters):
+    count_list = [0 for x in range(0, 26)]
+    for letter in list_of_characters:
+        count_list[ord(letter) - 97] += 1
+    return count_list
 
 def average(x):
     assert len(x) > 0
@@ -64,6 +82,7 @@ def magnitude(v):
 def normalize(v):
     vmag = magnitude(v)
     return [ v[i]/vmag  for i in range(len(v)) ]
+
 
 if __name__ == '__main__':
     main()
