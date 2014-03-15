@@ -15,6 +15,83 @@ def main():
         print(message)
 
 
+def decipher_vigenere(message):
+    key_lengths = find_probable_key_lengths(message)
+    for k_length in key_lengths:
+        print(k_length)
+    key_length = int(input("What key length would you like to try?: "))
+
+    key = find_decryption_key(message, key_length)
+    return [key]
+
+
+def find_decryption_key(message, key_length):
+    resultant_key = []
+
+    for x in range(0, key_length):
+        resultant_key.append(find_letter(message, x, key_length, resultant_key))
+
+    return resultant_key
+
+
+def find_letter(message, pos, length, key_thusfar):
+    partial_deciphers = []
+
+    message_thusfar = list(message)
+    for x in range(0, len(key_thusfar)):
+        message_thusfar = partially_decipher(message_thusfar, x, length, ord(key_thusfar[x])-97)
+    print(message_thusfar)
+
+    for letter in range(0, 26):
+        converted_letter = chr(letter+97)
+        partial_message = partially_decipher(message_thusfar, pos, length, letter)
+        frequency = normalize(count_letters(partial_message))
+        partial_deciphers.append((converted_letter, pearson_def(frequency, ALPHA_MAPPING)))
+    sorted_list = sorted(partial_deciphers, key=itemgetter(1), reverse=True)
+
+    return sorted_list[0][0]
+
+
+def partially_decipher(message, pos, length, letter):
+    converted_int_message = []
+
+    for character in message:
+        converted_int_message.append(ord(character) - 97)
+
+    for x in range(pos, len(message), length):
+        converted_int_message[x] -= letter
+        converted_int_message[x] %= 26
+
+    string_message = []
+    for val in converted_int_message:
+        string_message.append(chr(val+97))
+
+    return string_message
+
+
+def find_probable_key_lengths(message):
+    to_return = []
+    for x in range(1, len(message)):
+        displaced_message = displace_message(message, x)
+        number_of_coincidences = count_coincidences(message, displaced_message)
+        to_return.append((x, number_of_coincidences))
+    to_return = sorted(to_return, key=itemgetter(1), reverse=True)
+    return to_return
+
+
+def displace_message(message, dist):
+    padded = ' '*dist + message
+    return padded[:-dist]
+
+
+def count_coincidences(message, displaced):
+    coincidences = 0
+    for index in range(0, len(message)):
+        if message[index] == displaced[index]:
+            coincidences += 1
+    return coincidences
+
+
 def decipher_affine(message):
     valid_beta = [x for x in range(0, 26)]
     valid_alpha = [x for x in range(1, 26, 2)]
@@ -75,13 +152,9 @@ def pearson_def(x, y):
     return diffprod / math.sqrt(xdiff2 * ydiff2)
 
 
-def magnitude(v):
-    return math.sqrt(sum(v[i]*v[i] for i in range(len(v))))
-
-
 def normalize(v):
-    vmag = magnitude(v)
-    return [ v[i]/vmag  for i in range(len(v)) ]
+    total_occurrences = sum(v)
+    return [ (v[i])/total_occurrences for i in range(len(v)) ]
 
 
 if __name__ == '__main__':
