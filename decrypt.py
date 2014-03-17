@@ -10,7 +10,7 @@ ALPHA_MAPPING = [0.082, 0.015, 0.028, 0.043, 0.127, 0.022, 0.020, 0.061,
 
 def main():
     message = input("Enter a message to decode: ")
-    message_list = decipher_affine(message.lower())
+    message_list = decipher_vigenere(message.lower())
     for message in message_list:
         print(message)
 
@@ -22,7 +22,12 @@ def decipher_vigenere(message):
     key_length = int(input("What key length would you like to try?: "))
 
     key = find_decryption_key(message, key_length)
-    return [key]
+
+    message_thusfar = list(message)
+    for x in range(0, len(key)):
+        message_thusfar = partially_decipher(message_thusfar, x, key_length, ord(key[x])-97)
+
+    return [[key], [message_thusfar]]
 
 
 def find_decryption_key(message, key_length):
@@ -38,15 +43,13 @@ def find_letter(message, pos, length, key_thusfar):
     partial_deciphers = []
 
     message_thusfar = list(message)
-    for x in range(0, len(key_thusfar)):
-        message_thusfar = partially_decipher(message_thusfar, x, length, ord(key_thusfar[x])-97)
-    print(message_thusfar)
 
     for letter in range(0, 26):
         converted_letter = chr(letter+97)
         partial_message = partially_decipher(message_thusfar, pos, length, letter)
         frequency = normalize(count_letters(partial_message))
         partial_deciphers.append((converted_letter, pearson_def(frequency, ALPHA_MAPPING)))
+        # print((chr(letter + 97), pearson_def(frequency, ALPHA_MAPPING)))
     sorted_list = sorted(partial_deciphers, key=itemgetter(1), reverse=True)
 
     return sorted_list[0][0]
