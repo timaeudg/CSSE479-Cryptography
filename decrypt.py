@@ -9,11 +9,51 @@ ALPHA_MAPPING = [0.082, 0.015, 0.028, 0.043, 0.127, 0.022, 0.020, 0.061,
 
 
 def main():
-    message = input("Enter a message to decode: ")
-    message_list = decipher_vigenere(message.lower())
+
+    cipher_choice = raw_input("What type of cipher? (1 affine, 2 vigenere, 3 playfair):")
+
+    message = raw_input("Enter a message to decode: ")
+
+    message_list = []
+    if cipher_choice == '1':
+        message_list = decipher_affine(message.lower())
+    elif cipher_choice == '2':
+        message_list = decipher_vigenere(message.lower())
+    else:
+        key = input("What is the key?:")
+        message_list = decipher_playfair(message.lower(), key.lower())
+
     for message in message_list:
         print(message)
 
+
+def decipher_playfair(message, key):
+    alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',' i', 'k', 'l', 'm',
+                'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+    key_list = []
+
+    for letter in key:
+        if letter == 'j' and ('i' in alphabet):
+            key_list.append('i')
+            alphabet.remove('i')
+        elif letter in alphabet:
+            key_list.append(letter)
+            alphabet.remove(letter)
+
+    grid = [[],[],[],[],[]]
+
+    for row in grid:
+        for x in range(0,5):
+            if len(key_list) > 0:
+                letter_to_add = key_list[0]
+                row.append(letter_to_add)
+                key_list.remove(letter_to_add)
+            else:
+                letter_to_add = alphabet[0]
+                row.append(letter_to_add)
+                alphabet.remove(letter_to_add)
+
+    return [key_list, alphabet, grid]
 
 def decipher_vigenere(message):
     key_lengths = find_probable_key_lengths(message)
@@ -27,7 +67,7 @@ def decipher_vigenere(message):
     for x in range(0, len(key)):
         message_thusfar = partially_decipher(message_thusfar, x, key_length, ord(key[x])-97)
 
-    return [[key], [message_thusfar]]
+    return [''.join(key), ''.join(message_thusfar)]
 
 
 def find_decryption_key(message, key_length):
@@ -156,7 +196,7 @@ def pearson_def(x, y):
 
 
 def normalize(v):
-    total_occurrences = sum(v)
+    total_occurrences = float(sum(v))
     return [ (v[i])/total_occurrences for i in range(len(v)) ]
 
 
