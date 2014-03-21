@@ -10,22 +10,46 @@ ALPHA_MAPPING = [0.082, 0.015, 0.028, 0.043, 0.127, 0.022, 0.020, 0.061,
 
 def main():
 
-    cipher_choice = raw_input("What type of cipher? (1 affine, 2 vigenere, 3 playfair):")
+    cipher_choice = raw_input("What type of cipher? (1 affine, 2 vigenere, 3 substitution, 4 playfair):")
 
     message = raw_input("Enter a message to decode: ")
 
-    message_list = []
     if cipher_choice == '1':
-        message_list = decipher_affine(message.lower())
+        decipher_affine(message.lower())
     elif cipher_choice == '2':
-        message_list = decipher_vigenere(message.lower())
+        decipher_vigenere(message.lower())
+    elif cipher_choice == '3':
+        decipher_substitution(message.lower())
     else:
         key = input("What is the key?:")
-        message_list = decipher_playfair(message.lower(), key.lower())
+        decipher_playfair(message.lower(), key.lower())
 
-    for message in message_list:
-        print(message)
 
+def decipher_substitution(message):
+
+    sorted_digraphs = ['th', 'he', 'in', 'er', 'an', 're', 'on', 'at', 'en', 'nd', 'st', 'or', 'te', 'es', 'is', 'ha', 'ou', 'it', 'to', 'ed', 'ti', 'ng', 'ar',
+                       'se', 'al', 'nt', 'as', 'le', 've', 'of', 'me', 'hi', 'ea', 'ne', 'de', 'co', 'ro', 'll', 'ri', 'li', 'ra', 'io', 'be', 'el', 'ch', 'ic',
+                       'ce', 'ta', 'ma', 'ur', 'om', 'ho', 'et', 'no', 'ut', 'si', 'ca', 'la', 'il', 'fo', 'us', 'pe', 'ot', 'ec', 'lo', 'di', 'ns', 'ge', 'ly',
+                       'ac', 'wi', 'wh', 'tr', 'ee', 'so', 'un', 'rs', 'wa', 'ow', 'id', 'ad', 'ai', 'ss', 'pr', 'ct', 'we', 'mo', 'ol', 'em', 'nc', 'rt', 'sh',
+                       'po', 'ie', 'ul', 'im', 'ts', 'am', 'ir', 'yo', 'fi', 'os', 'pa', 'ni', 'ld', 'sa', 'ay', 'ke', 'mi', 'na', 'oo', 'su', 'do', 'ig', 'ev',
+                       'gh', 'bl', 'if', 'tu', 'av', 'pl', 'wo', 'ry', 'bu']
+    sorted_letters = ['e', 't', 'a', 'o', 'i', 'n', 's', 'h', 'r', 'd', 'l', 'c', 'u',
+                      'm', 'w', 'f', 'g', 'y', 'p', 'b', 'v', 'k', 'j', 'x', 'q', 'z']
+    letter_dict = {}
+
+    for letter in message:
+        if letter in letter_dict:
+            letter_dict[letter] += 1
+        else:
+            letter_dict[letter] = 1
+
+    letters_array = []
+    for item in letter_dict:
+        letters_array.append((item, letter_dict[item]))
+    sorted_letter_count = sorted(letters_array, key=itemgetter(1), reverse=True)
+    print(sorted_letter_count)
+    print(sorted_letters)
+    return
 
 def decipher_playfair(message, key):
     alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',' i', 'k', 'l', 'm',
@@ -52,7 +76,7 @@ def decipher_playfair(message, key):
                 letter_to_add = alphabet[0]
                 row.append(letter_to_add)
                 alphabet.remove(letter_to_add)
-
+    print(grid)
     return [key_list, alphabet, grid]
 
 def decipher_vigenere(message):
@@ -61,13 +85,24 @@ def decipher_vigenere(message):
         print(k_length)
     key_length = int(input("What key length would you like to try?: "))
 
-    key = find_decryption_key(message, key_length)
+    full_key = find_decryption_key(message, key_length)
+    print(full_key)
+    keep_trying = True
+    while keep_trying:
+        key = []
+        for possibility in full_key:
+            key.append(possibility[0])
 
-    message_thusfar = list(message)
-    for x in range(0, len(key)):
-        message_thusfar = partially_decipher(message_thusfar, x, key_length, ord(key[x])-97)
+        message_thusfar = list(message)
+        for x in range(0, len(key)):
+            message_thusfar = partially_decipher(message_thusfar, x, key_length, ord(key[x])-97)
 
-    return [''.join(key), ''.join(message_thusfar)]
+        print(''.join(key))
+        print(''.join(message_thusfar))
+        correction_index = int(raw_input('Which character seems incorrect?:'))
+        full_key[correction_index].remove(full_key[correction_index][0])
+
+    return
 
 
 def find_decryption_key(message, key_length):
@@ -89,10 +124,13 @@ def find_letter(message, pos, length, key_thusfar):
         partial_message = partially_decipher(message_thusfar, pos, length, letter)
         frequency = normalize(count_letters(partial_message))
         partial_deciphers.append((converted_letter, pearson_def(frequency, ALPHA_MAPPING)))
-        # print((chr(letter + 97), pearson_def(frequency, ALPHA_MAPPING)))
     sorted_list = sorted(partial_deciphers, key=itemgetter(1), reverse=True)
 
-    return sorted_list[0][0]
+    to_return = []
+    for x in range(0, 5):
+        to_return.append(sorted_list[x][0])
+
+    return to_return
 
 
 def partially_decipher(message, pos, length, letter):
@@ -162,7 +200,8 @@ def decipher_affine(message):
     to_return = []
     for conversion in sorted_correlated_conversions:
         to_return.append((''.join(conversion[0]), conversion[1]))
-    return to_return
+
+    print(to_return)
 
 
 def count_letters(list_of_characters):
