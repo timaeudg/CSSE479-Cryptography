@@ -21,7 +21,7 @@ def main():
     elif cipher_choice == '3':
         decipher_substitution(message.lower())
     else:
-        key = input("What is the key?:")
+        key = raw_input("What is the key?:")
         decipher_playfair(message.lower(), key.lower())
 
 
@@ -52,12 +52,71 @@ def decipher_substitution(message):
     return
 
 def decipher_playfair(message, key):
-    alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',' i', 'k', 'l', 'm',
+    playfair_grid = make_playfair_grid(key)
+    print(playfair_grid)
+    character_pairs = get_character_pairs(message)
+    deciphered_pairs = []
+    for pair in character_pairs:
+        deciphered_pairs.append(get_deciphered_pair(pair, playfair_grid))
+
+    print(reconstitute_message(deciphered_pairs))
+    return reconstitute_message(deciphered_pairs)
+
+
+def reconstitute_message(deciphered):
+    deciphered_message = ""
+    for pair in deciphered:
+        deciphered_message += pair[0] + pair[1]
+    return deciphered_message
+
+
+def get_deciphered_pair(pair, grid):
+    x1, y1 = get_location_in_grid(pair[0], grid)
+    x2, y2 = get_location_in_grid(pair[1], grid)
+    if x1 == x2:
+    #     Rows are the same
+        first = grid[x1][(y1-1)%5]
+        second = grid[x1][(y2-1)%5]
+        return first, second
+    elif y1 == y2:
+    #     Columns are the same
+        first = grid[(x1-1)%5][y1]
+        second = grid[(x2-1)%5][y1]
+        return first, second
+    else:
+        first = grid[x1][y2]
+        second = grid[x2][y1]
+        return first, second
+
+
+def get_character_pairs(message):
+    pairs = []
+    for index in range(0, len(message), 2):
+        first = message[index]
+        second = message[index+1]
+        pairs.append((first, second))
+    return pairs
+
+
+def get_location_in_grid(letter, grid):
+    x = -1
+    y = -1
+    for row in range(0, len(grid)):
+        for column in range(0, len(grid[0])):
+            if grid[row][column] == letter:
+                x = row
+                y = column
+                break
+    return x, y
+
+
+def make_playfair_grid(key):
+    alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'k', 'l', 'm',
                 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
     key_list = []
 
     for letter in key:
-        if letter == 'j' and ('i' in alphabet):
+        if letter == 'j' or letter == 'i' and ('i' in alphabet):
             key_list.append('i')
             alphabet.remove('i')
         elif letter in alphabet:
@@ -76,8 +135,9 @@ def decipher_playfair(message, key):
                 letter_to_add = alphabet[0]
                 row.append(letter_to_add)
                 alphabet.remove(letter_to_add)
-    print(grid)
-    return [key_list, alphabet, grid]
+
+    return grid
+
 
 def decipher_vigenere(message):
     key_lengths = find_probable_key_lengths(message)
