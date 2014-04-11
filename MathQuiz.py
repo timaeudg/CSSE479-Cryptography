@@ -1,13 +1,14 @@
 __author__ = 'Kenny'
 import math
 import PrimeFactorizer
+import ModularSqrt
 
 def main():
-    print find_primitive_roots(619)
+    print mod_sqrt(71, 77)
 
     return
 
-y
+
 # ax + by = gcd(a, b)1
 # This takes in a and b and returns the gcd, x, and y.
 def extended_euclidean(a, b):
@@ -132,6 +133,18 @@ def find_primitive_roots(mod):
     return primroots
 
 
+def mod_sqrt(a, p):
+    if PrimeFactorizer.isprime(p):
+        return ModularSqrt.modular_sqrt(a, p)
+    else:
+        return brute_force_square_solver(a, p)
+
+def brute_force_square_solver(a, mod):
+    solutions = []
+    for i in range(1, mod):
+        if i**2 % mod == a:
+            solutions.append(i)
+    return solutions
 
 
 
