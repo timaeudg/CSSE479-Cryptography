@@ -171,11 +171,10 @@ def t_function(column, i_value):
 
 
 def convert_matrix_to_binary(matrix):
-    value = 0x00000000000000000000000000000000
+    value = ''
     for i in range(4):
         for j in range(4):
-            value <<= 8
-            value ^= matrix[j][i]
+            value += '{0:08b}'.format(matrix[j][i])
     return value
 
 
@@ -189,10 +188,7 @@ def add_round_key(round_key, message):
     return added_message
 
 
-def aes_encryption(message, key):
-    key_matrix = convert_to_matrix(key)
-    matrix = convert_to_matrix(message)
-
+def aes_encryption(matrix, key_matrix):
     round_keys = generate_round_keys(key_matrix)
 
     encrypted_message = add_round_key(matrix, get_round_key_from_expanded_matrix(round_keys, 0))
@@ -209,20 +205,22 @@ def aes_encryption(message, key):
     encrypted_message = shift_row(encrypted_message)
     encrypted_message = add_round_key(round_key, encrypted_message)
 
-    return convert_matrix_to_binary(encrypted_message)
+    return encrypted_message
 
 
 def main():
     message = input("Message Text in binary: ")
     key = input("Key in binary: ")
     iterations = input("Number of iterations (i.e. 2 = aes(aes(message)) etc.): ")
-    result = aes_encryption(message, key)
-    result = "{0:b}".format(result)
+    key_matrix = convert_to_matrix(key)
+    matrix = convert_to_matrix(message)
+    result = aes_encryption(matrix, key_matrix)
     for i in range(int(iterations)-1):
-        result = aes_encryption(result, key)
-        result = "{0:b}".format(result)
+        result = aes_encryption(result, key_matrix)
 
-    print(result)
+    # for hex output if desired
+    # print(hex(int(convert_matrix_to_binary(result), 2)))
+    print(convert_matrix_to_binary(result))
     return
 
 
