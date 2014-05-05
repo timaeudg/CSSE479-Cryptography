@@ -27,49 +27,45 @@ sbox =  [0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67,
          0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0,
          0x54, 0xbb, 0x16]
 
-mix_column_matrix = [['00000010', '00000011', '00000001', '00000001'],
-                     ['00000001', '00000010', '00000011', '00000001'],
-                     ['00000001', '00000001', '00000010', '00000011'],
-                     ['00000011', '00000001', '00000001', '00000010']]
+mix_column_matrix = [[0x2, 0x3, 0x1, 0x1],
+                     [0x1, 0x2, 0x3, 0x1],
+                     [0x1, 0x1, 0x2, 0x3],
+                     [0x3, 0x1, 0x1, 0x2]]
 
 
 def transpose(matrix):
     columns = []
-    for i in range(4):
+    for i in range(len(matrix[0])):
         new_column = []
-        for j in range(4):
+        for j in range(len(matrix)):
             new_column.append(matrix[j][i])
         columns.append(new_column)
     return columns
 
 
-# galois multiplication of the 4x4 matrix
-def mix_columns(matrix):
-    # iterate over the 4 columns
-    transposed = transpose(matrix)
-    transposed_result = []
-    for column in transposed:
-        # apply the mixColumn on one column
-        mixed_column = mix_column(column)
-        transposed_result.append(mixed_column)
-    return transpose(transposed_result)
+def mix_column(input_matrix):
+    return galois_matrix_multiplication(mix_column_matrix, input_matrix)
 
 
-# galois multiplication of 1 column of the 4x4 matrix
-def mix_column(column):
-    mult = [2, 1, 1, 3]
-    cpy = list(column)
-    g = galois_multiplication
+def galois_matrix_multiplication(matrix_a, matrix_b):
+    resultant_matrix = []
+    transpose_matrix_b = transpose(matrix_b)
 
-    column[0] = galois_multiplication(cpy[0], mult[0]) ^ g(cpy[3], mult[1]) ^ \
-                galois_multiplication(cpy[2], mult[2]) ^ g(cpy[1], mult[3])
-    column[1] = galois_multiplication(cpy[1], mult[0]) ^ g(cpy[0], mult[1]) ^ \
-                galois_multiplication(cpy[3], mult[2]) ^ g(cpy[2], mult[3])
-    column[2] = galois_multiplication(cpy[2], mult[0]) ^ g(cpy[1], mult[1]) ^ \
-                galois_multiplication(cpy[0], mult[2]) ^ g(cpy[3], mult[3])
-    column[3] = galois_multiplication(cpy[3], mult[0]) ^ g(cpy[2], mult[1]) ^ \
-                galois_multiplication(cpy[1], mult[2]) ^ g(cpy[0], mult[3])
-    return column
+    for row in matrix_a:
+        resultant_row = []
+        for column_index in range(len(row)):
+            resultant_row.append(matrix_multiplication_calculation(row, transpose_matrix_b[column_index]))
+        resultant_matrix.append(resultant_row)
+
+    return resultant_matrix
+
+
+def matrix_multiplication_calculation(list_a, list_b):
+    result = 0
+    for i in range(len(list_a)):
+        gm_result = galois_multiplication(list_a[i], list_b[i])
+        result = result ^ gm_result
+    return result
 
 
 def galois_multiplication(a, b):
@@ -88,9 +84,9 @@ def galois_multiplication(a, b):
 
 
 def byte_sub(byte):
-    first = byte & 0x0F
-    second = byte >> 4
-    return sbox[first + 4*second]
+    column = byte & 0x0F
+    row = (byte >> 4) & 0x0F
+    return sbox[column + 16*row]
 
 
 def matrix_byte_sub(matrix):
@@ -127,22 +123,106 @@ def convert_to_matrix(text):
     return resultant_matrix
 
 
-def aes_encryption(message, key, iterations):
+def list_xor(list_a, list_b):
+    result = []
+    for index in range(len(list_a)):
+        result.append(list_a[index] ^ list_b[index])
+    return result
+
+
+def generate_round_keys(key_matrix):
+    transposed = transpose(key_matrix)
+
+    transposed_expanded_key_matrix = []
+    transposed_expanded_key_matrix.extend(transposed)
+
+    for i in range(4, 44):
+        if i % 4 == 0:
+            new_column = list_xor(transposed_expanded_key_matrix[i-4], t_function(transposed_expanded_key_matrix[i-1], i))
+        else:
+            new_column = list_xor(transposed_expanded_key_matrix[i-4], transposed_expanded_key_matrix[i-1])
+        transposed_expanded_key_matrix.append(new_column)
+
+    expanded_key_matrix = transpose(transposed_expanded_key_matrix)
+
+    return expanded_key_matrix
+
+
+def get_round_key_from_expanded_matrix(expanded_matrix, i):
+    key_matrix = []
+    for row in expanded_matrix:
+        new_row = []
+        new_row.extend([row[4*i], row[4*i+1], row[4*i+2], row[4*i+3]])
+        key_matrix.append(new_row)
+    return key_matrix
+
+
+def t_function(column, i_value):
+    r_value = 0x01
+    for i in range((i_value-4)//4):
+        r_value = galois_multiplication(r_value, 0x02)
+
+    e = byte_sub(column[1]) ^ r_value
+    f = byte_sub(column[2])
+    g = byte_sub(column[3])
+    h = byte_sub(column[0])
+
+    return [e, f, g, h]
+
+
+def convert_matrix_to_binary(matrix):
+    value = 0x00000000000000000000000000000000
+    for i in range(4):
+        for j in range(4):
+            value <<= 8
+            value ^= matrix[j][i]
+    return value
+
+
+def add_round_key(round_key, message):
+    added_message = []
+    for i in range(0, 4):
+        new_row = []
+        for k in range(0, 4):
+            new_row.append(round_key[i][k] ^ message[i][k])
+        added_message.append(new_row)
+    return added_message
+
+
+def aes_encryption(message, key):
     key_matrix = convert_to_matrix(key)
-    for x in range(int(iterations)):
-        matrix = convert_to_matrix(message)
-        print(matrix)
-        print(matrix_byte_sub(matrix))
-        print(shift_row(matrix))
-        print(mix_columns(matrix))
-    return
+    matrix = convert_to_matrix(message)
+
+    round_keys = generate_round_keys(key_matrix)
+
+    encrypted_message = add_round_key(matrix, get_round_key_from_expanded_matrix(round_keys, 0))
+
+    for i in range(1, 10):
+        round_key = get_round_key_from_expanded_matrix(round_keys, i)
+        encrypted_message = matrix_byte_sub(encrypted_message)
+        encrypted_message = shift_row(encrypted_message)
+        encrypted_message = mix_column(encrypted_message)
+        encrypted_message = add_round_key(round_key, encrypted_message)
+
+    round_key = get_round_key_from_expanded_matrix(round_keys, 10)
+    encrypted_message = matrix_byte_sub(encrypted_message)
+    encrypted_message = shift_row(encrypted_message)
+    encrypted_message = add_round_key(round_key, encrypted_message)
+
+    return convert_matrix_to_binary(encrypted_message)
 
 
 def main():
-    message = input("Message Text: ")
-    key = input("Key: ")
-    iterations = input("Number of iterations: ")
-    aes_encryption(message, key, iterations)
+    message = input("Message Text in binary: ")
+    key = input("Key in binary: ")
+    iterations = input("Number of iterations (i.e. 2 = aes(aes(message)) etc.): ")
+    result = aes_encryption(message, key)
+    result = "{0:b}".format(result)
+    for i in range(int(iterations)-1):
+        result = aes_encryption(result, key)
+        result = "{0:b}".format(result)
+
+    print(result)
     return
 
 
