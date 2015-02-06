@@ -105,10 +105,11 @@ function hasUsefulData(formObject) {
 
 function isLoginInfo(input) {
     var possibleValues = ['username', 'user', 'usr', 'pass','passwd','password','pwd', 'email','e-mail', 'login', 'id','name','log']
+    var value = false;
     possibleValues.forEach(function(value){
-        namePlaceholderCheck(value, input);
+        value = value || namePlaceholderCheck(value, input);
     });
-    return false;
+    return value;
 }
 
 function namePlaceholderCheck(searchText, input){
