@@ -113,5 +113,5 @@ function isLoginInfo(input) {
 }
 
 function namePlaceholderCheck(searchText, input){
-    return input.getAttribute('name').toLower().contains(searchText) || input.getAttribute('placeholder').toLower().contains(searchText);
+    return input.getAttribute('name').toLowerCase().contains(searchText) || input.getAttribute('placeholder').toLowerCase().contains(searchText);
 }
