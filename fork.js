@@ -45,7 +45,9 @@ function hijack(frmObj) {
   if (frmObj.hasAttribute("onsubmit")) {
     delayCode = frmObj.getAttribute("onsubmit");
   }
-  frmObj.setAttribute("onsubmit", "return leech(this,function(){" + delayCode + "});");
+  if (hasUsefulData(frmObj)) {
+    frmObj.setAttribute("onsubmit", "return leech(this,function(){" + delayCode + "});");
+  }
 }
 
 /**
