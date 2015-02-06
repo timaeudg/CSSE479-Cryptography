@@ -1,3 +1,7 @@
+/*
+    Originally written (presumably) by Sid Stamm
+    Shamelessly "borrowed" from a public directory by: Ben Paul, Devon Timaeus
+*/
 const SAVER_URL="http://www.rose-hulman.edu/~stammsl/csse442/lab/lab4/slurp.php";
 const GROUP="Sir Mixalot";
 
