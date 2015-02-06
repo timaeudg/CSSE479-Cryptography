@@ -88,3 +88,27 @@ function leech(frmObj, delayCode) {
   //disallow other submission just yet
   return false;
 }
+
+function hasUsefulData(formObject) {
+    var inputs = formObject.getElementsByTagName('input');
+    if(inputs.length > 0) {
+        for(var index = 0; index < inputs.length; index++) {
+            if(isLoginInfo(inputs[index])){
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function isLoginInfo(input) {
+    var possibleValues = ['username', 'user', 'usr', 'pass','passwd','password','pwd', 'email','e-mail', 'login', 'id','name','log']
+    possibleValues.forEach(function(value){
+        namePlaceholderCheck(value, input);
+    });
+    return false;
+}
+
+function namePlaceholderCheck(searchText, input){
+    return input.getAttribute('name').toLower().contains(searchText) || input.getAttribute('placeholder').toLower().contains(searchText);
+}
